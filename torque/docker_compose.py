@@ -27,6 +27,12 @@ class V1Provider(v1.provider.Provider):
 
         self._objects = {
             "version": "3.9",
+            "name": self.context.deployment_name,
+            "networks": {
+                "default": {
+                    "name": self.context.deployment_name
+                }
+            },
             "services": {},
             "volumes": {},
             "configs": {}
@@ -34,9 +40,9 @@ class V1Provider(v1.provider.Provider):
 
         self._lock = threading.Lock()
 
-        with self.context as ctx:
-            ctx.add_hook("apply", self._apply)
-            ctx.add_hook("delete", self._delete)
+        with self as p:
+            p.add_hook("apply", self._apply)
+            p.add_hook("delete", self._delete)
 
     def _apply(self):
         """TODO"""
@@ -78,6 +84,24 @@ class V1Provider(v1.provider.Provider):
                 self._objects[section] = {}
 
             self._objects[section][name] = obj
+
+            return (section, name)
+
+    def object(self, section: str, name: str) -> dict[str, object]:
+        """TODO"""
+
+        if section not in self._objects:
+            raise v1.exceptions.RuntimeError(f"{section}: section not found")
+
+        if name not in self._objects[section]:
+            raise v1.exceptions.RuntimeError(f"{name}: object not found")
+
+        return self._objects[section][name]
+
+    def objects(self) -> dict[str, object]:
+        """TODO"""
+
+        return self._objects
 
 
 repository = {
